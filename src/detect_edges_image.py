@@ -4,6 +4,8 @@
 Colar no terminal:
 python detect_edges_image.py --edge-detector '.\holistically-nested-edge-detection\hed_model\' 
 --image '..\images\test_cow.jpeg' --mask '..\images\test_mask.png' 
+python detect_edges_image.py --edge-detector '.\holistically-nested-edge-detection\hed_model\'
+--image '..\images\test_cow.jpeg' --mask '..\images\test_mask.png'
 --output '..\output\images_without_background\image.jpeg'
 '''
 
@@ -12,6 +14,7 @@ import argparse
 import cv2
 import os
 from remove_background import remove_background
+from interpolacao import redimensiona
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -72,7 +75,8 @@ cv2.dnn_registerLayer("Crop", CropLayer)
 
 prime_image = cv2.imread(args["image"])
 mask = cv2.imread(args["mask"],0)
-image = remove_background(prime_image, mask)
+mascara = redimensiona(mask, prime_image)
+image = remove_background(prime_image, mascara)
 
 #image = cv2.imread(args["image"])
 (H, W) = image.shape[:2]
