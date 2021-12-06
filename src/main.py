@@ -6,6 +6,7 @@ from remove_background import remove_background
 from interpolacao import redimensiona
 
 if __name__ == "__main__":
+
     imagemMascara = cv2.imread('..\images\mask_vaca_traseira.png', 0)
     imagemBase = cv2.imread('..\images\test_cow.jpeg')
 

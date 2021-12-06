@@ -2,6 +2,8 @@
 # python detect_edges_image.py --edge-detector hed_model --image images/guitar.jpg
 '''
 Colar no terminal:
+python detect_edges_image.py --edge-detector '.\holistically-nested-edge-detection\hed_model\' 
+--image '..\images\test_cow.jpeg' --mask '..\images\test_mask.png' 
 python detect_edges_image.py --edge-detector '.\holistically-nested-edge-detection\hed_model\'
 --image '..\images\test_cow.jpeg' --mask '..\images\test_mask.png'
 --output '..\output\images_without_background\image.jpeg'
