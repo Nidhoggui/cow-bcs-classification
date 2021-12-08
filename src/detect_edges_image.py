@@ -1,71 +1,73 @@
 # USAGE
 # python detect_edges_image.py --edge-detector hed_model --image images/guitar.jpg
-'''
+"""
 Colar no terminal:
-python detect_edges_image.py --edge-detector '.\holistically-nested-edge-detection\hed_model\' 
---image '..\images\test_cow.jpeg' --mask '..\images\test_mask.png' 
+python detect_edges_image.py --edge-detector '.\holistically-nested-edge-detection\hed_model\'
+--image '..\images\test_cow.jpeg' --mask '..\images\test_mask.png'
 python detect_edges_image.py --edge-detector '.\holistically-nested-edge-detection\hed_model\'
 --image '..\images\test_cow.jpeg' --mask '..\images\test_mask.png'
 --output '..\output\images_without_background\image.jpeg'
-'''
+"""
 
 # import the necessary packages
 import argparse
-import cv2
+from cv2 import cv2
 import os
-from remove_background import remove_background
-from interpolacao import redimensiona
+from src.grabcut.remove_background import remove_background
+from src.grabcut.interpolation import redimensiona
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-d", "--edge-detector", type=str, required=True,
-	help="path to OpenCV's deep learning edge detector")
+                help="path to OpenCV's deep learning edge detector")
 ap.add_argument("-i", "--image", type=str, required=True,
-	help="path to input image")
+                help="path to input image")
 ap.add_argument("-m", "--mask", type=str, required=True,
-	help="path to input the image mask")
+                help="path to input the image mask")
 ap.add_argument("-o", "--output", type=str, required=True,
-	help="path to output image")
+                help="path to output image")
 args = vars(ap.parse_args())
 
+
 class CropLayer(object):
-	def __init__(self, params, blobs):
-		# initialize our starting and ending (x, y)-coordinates of
-		# the crop
-		self.startX = 0
-		self.startY = 0
-		self.endX = 0
-		self.endY = 0
+    def __init__(self, params, blobs):
+        # initialize our starting and ending (x, y)-coordinates of
+        # the crop
+        self.startX = 0
+        self.startY = 0
+        self.endX = 0
+        self.endY = 0
 
-	def getMemoryShapes(self, inputs):
-		# the crop layer will receive two inputs -- we need to crop
-		# the first input blob to match the shape of the second one,
-		# keeping the batch size and number of channels
-		(inputShape, targetShape) = (inputs[0], inputs[1])
-		(batchSize, numChannels) = (inputShape[0], inputShape[1])
-		(H, W) = (targetShape[2], targetShape[3])
+    def getMemoryShapes(self, inputs):
+        # the crop layer will receive two inputs -- we need to crop
+        # the first input blob to match the shape of the second one,
+        # keeping the batch size and number of channels
+        (inputShape, targetShape) = (inputs[0], inputs[1])
+        (batchSize, numChannels) = (inputShape[0], inputShape[1])
+        (H, W) = (targetShape[2], targetShape[3])
 
-		# compute the starting and ending crop coordinates
-		self.startX = int((inputShape[3] - targetShape[3]) / 2)
-		self.startY = int((inputShape[2] - targetShape[2]) / 2)
-		self.endX = self.startX + W
-		self.endY = self.startY + H
+        # compute the starting and ending crop coordinates
+        self.startX = int((inputShape[3] - targetShape[3]) / 2)
+        self.startY = int((inputShape[2] - targetShape[2]) / 2)
+        self.endX = self.startX + W
+        self.endY = self.startY + H
 
-		# return the shape of the volume (we'll perform the actual
-		# crop during the forward pass
-		return [[batchSize, numChannels, H, W]]
+        # return the shape of the volume (we'll perform the actual
+        # crop during the forward pass
+        return [[batchSize, numChannels, H, W]]
 
-	def forward(self, inputs):
-		# use the derived (x, y)-coordinates to perform the crop
-		return [inputs[0][:, :, self.startY:self.endY,
-				self.startX:self.endX]]
+    def forward(self, inputs):
+        # use the derived (x, y)-coordinates to perform the crop
+        return [inputs[0][:, :, self.startY:self.endY,
+                self.startX:self.endX]]
+
 
 # load our serialized edge detector from disk
 print("[INFO] loading edge detector...")
 protoPath = os.path.sep.join([args["edge_detector"],
-	"deploy.prototxt"])
+                              "deploy.prototxt"])
 modelPath = os.path.sep.join([args["edge_detector"],
-	"hed_pretrained_bsds.caffemodel"])
+                              "hed_pretrained_bsds.caffemodel"])
 net = cv2.dnn.readNetFromCaffe(protoPath, modelPath)
 
 # register our new layer with the model
@@ -74,11 +76,11 @@ cv2.dnn_registerLayer("Crop", CropLayer)
 # load the input image and grab its dimensions
 
 prime_image = cv2.imread(args["image"])
-mask = cv2.imread(args["mask"],0)
+mask = cv2.imread(args["mask"], 0)
 mascara = redimensiona(mask, prime_image)
 image = remove_background(prime_image, mascara)
 
-#image = cv2.imread(args["image"])
+# image = cv2.imread(args["image"])
 (H, W) = image.shape[:2]
 
 # convert the image to grayscale, blur it, and perform Canny
@@ -91,8 +93,8 @@ canny = cv2.Canny(blurred, 30, 150)
 # construct a blob out of the input image for the Holistically-Nested
 # Edge Detector
 blob = cv2.dnn.blobFromImage(image, scalefactor=1.0, size=(W, H),
-	mean=(104.00698793, 116.66876762, 122.67891434),
-	swapRB=False, crop=False)
+                             mean=(104.00698793, 116.66876762, 122.67891434),
+                             swapRB=False, crop=False)
 
 # set the blob as the input to the network and perform a forward pass
 # to compute the edges
@@ -109,5 +111,5 @@ cv2.imshow("Canny", canny)
 cv2.imshow("HED", hed)
 cv2.waitKey(0)
 
-#P - save the hed img
-cv2.imwrite(args["output"],hed)
+# P - save the hed img
+cv2.imwrite(args["output"], hed)
