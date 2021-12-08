@@ -14,7 +14,7 @@ import argparse
 from cv2 import cv2
 import os
 from src.grabcut.remove_background import remove_background
-from src.grabcut.interpolation import redimensiona
+from src.grabcut.interpolation import resize
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -77,7 +77,7 @@ cv2.dnn_registerLayer("Crop", CropLayer)
 
 prime_image = cv2.imread(args["image"])
 mask = cv2.imread(args["mask"], 0)
-mascara = redimensiona(mask, prime_image)
+mascara = resize(mask, prime_image)
 image = remove_background(prime_image, mascara)
 
 # image = cv2.imread(args["image"])
