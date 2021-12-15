@@ -13,8 +13,8 @@ python detect_edges_image.py --edge-detector '.\holistically-nested-edge-detecti
 import argparse
 from cv2 import cv2
 import os
-from src.grabcut.remove_background import remove_background
-from src.grabcut.interpolation import resize
+from src.segmentation.grabcut.remove_background import remove_background
+from src.segmentation.interpolation import resize
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()

@@ -1,12 +1,12 @@
 from cv2 import cv2
 import matplotlib.pyplot as plt
 
-from interpolation import resize
+from src.segmentation.interpolation import resize
 from remove_background import remove_background
 
 if __name__ == "__main__":
-    mask_image = cv2.imread('../../images/test_mask.png', 0)
-    image = cv2.imread('../../images/test_cow.jpeg')
+    mask_image = cv2.imread('../../../images/masks/test_mask.png', 0)
+    image = cv2.imread('../../../images/back_images/cow_traseira.jpeg')
 
     mask_image = resize(mask_image, image)
 
