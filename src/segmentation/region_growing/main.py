@@ -2,38 +2,56 @@ from cv2 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-from region_growing import region_growing
+from skimage.segmentation import slic
+from skimage.util import img_as_float
+
+from region_growing import *
+from analysis_superpixels import analysis_superpixels
 
 
-def configure_image_mask(mask_img):
+def configure_mask_image(mask_img, mask_img_reverse):
     # set all pixel to 0 or 255, because the border pixels of the mask has other values
     for y in range(mask_img.shape[0]):
         for x in range(mask_img.shape[1]):
             if mask_img[y][x] != 255:
                 mask_img[y][x] = 0
 
+    for y in range(mask_img.shape[0]):
+        for x in range(mask_img.shape[1]):
+            if mask_img[y][x] != 255:
+                mask_img_reverse[y][x] = 255
+
     # decrease the size of the mask to stay within the outline of the cow
     kernel = np.ones((5, 5), np.uint8)
-    return cv2.erode(mask_img, kernel, iterations=20)
+    mask_img = cv2.erode(mask_img, kernel, iterations=20)
+    mask_img_reverse = cv2.dilate(mask_img_reverse, kernel, iterations=20)
+
+    return mask_img, mask_img_reverse
 
 
 if __name__ == "__main__":
-    images_path = "../../../images/region_growing_test/"
-    for i in range(1, 4):
-        image = cv2.imread(images_path + "vaca" + str(i) + ".jpeg")
-        grayscale_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    images_path = "C:\\Users\\usuario\\Projects\\cow-bcs-classification\\images\\region_growing_test\\"
+    image = cv2.imread(images_path + "vaca1.jpeg")
+    grayscale_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        mask_image = cv2.imread(images_path + "mask" + str(i) + ".png", 0)
-        mask_image = configure_image_mask(mask_image)
+    mask_image = cv2.imread(images_path + "mask1.png", 0)
+    mask_image_reverse = np.zeros(mask_image.shape).astype("uint8")
 
-        plt.imshow(mask_image)
-        plt.show()
+    mask_image, mask_image_reverse = configure_mask_image(
+        mask_image, mask_image_reverse)
 
-        region_growing(grayscale_image, mask_image)
-        mask = np.where((mask_image == 255), 1, 0).astype("uint8")
+    segments_slic_mask = slic(img_as_float(image),
+                              n_segments=150, compactness=10, sigma=3, mask=mask_image_reverse)
+    seeds = [get_initial_seed(segments_slic_mask, mask_image, image)]
+    graph_matrix = create_connected_superpixels_graph(segments_slic_mask)
 
-        final_image = image * mask[:, :, np.newaxis]
+    # region_growing_superpixels(grayscale_image, graph_matrix, segments_slic_mask, seeds, mask_image)
+    # region_growing_superpixels_rgb(image, graph_matrix, segments_slic_mask, seeds, mask_image, c=1.3)
+    mask = region_growing_superpixels_ed(
+        image, graph_matrix, segments_slic_mask, seeds, mask_image, c=1.3)
 
-        cv2.imwrite(f"../../../output/region_growing/vaca{i}.jpeg", final_image)
+    mask = np.where((mask == 255), 1, 0).astype("uint8")
 
-        print(f"[INFO] Image 'vaca{i}.jpeg' saved successfully")
+    final_image = image * mask[:, :, np.newaxis]
+
+    analysis_superpixels(image, mask_image, final_image, segments_slic_mask)
