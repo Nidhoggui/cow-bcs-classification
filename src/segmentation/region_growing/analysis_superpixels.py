@@ -4,31 +4,12 @@ import numpy as np
 from cv2 import cv2
 import pandas as pd
 
-from skimage.segmentation import slic, mark_boundaries
+from skimage.segmentation import mark_boundaries
 from skimage.util import img_as_float
 from skimage.measure import regionprops
 
 
-def analysis_superpixels(path_image, path_mask):
-    image = cv2.imread(path_image)
-    image_as_float = img_as_float(image)
-
-    image_mask = cv2.imread(path_mask, 0)
-    image_mask_reverse = np.zeros(image_mask.shape).astype("uint8")
-
-    for y in range(image_mask.shape[0]):
-        for x in range(image_mask.shape[1]):
-            if image_mask[y][x] != 255:
-                image_mask[y][x] = 0
-                image_mask_reverse[y][x] = 255
-
-    kernel = np.ones((5, 5), np.uint8)
-    image_mask = cv2.erode(image_mask, kernel, iterations=20)
-    image_mask_reverse = cv2.dilate(image_mask_reverse, kernel, iterations=20)
-
-    segments_slic_mask = slic(
-        image_as_float, n_segments=150, compactness=10, sigma=3, mask=image_mask_reverse)
-
+def analysis_superpixels(image, initial_mask, final_image, segments_slic_mask):
     centroids = []
     means = []
     std = []
@@ -67,17 +48,21 @@ def analysis_superpixels(path_image, path_mask):
     data['mean'] = means
     data['std'] = std
 
-    print(data)
-
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(1, 4, figsize=(16, 16),
+                           sharex=True, sharey=True)
     fig.set_figwidth(8)
     fig.set_figheight(12)
 
-    plt.imshow(
-        mark_boundaries(img_as_float(cv2.cvtColor(
-            image, cv2.COLOR_BGR2RGB)), segments_slic_mask, color=(255, 0, 0)),
-        zorder=0)
-    sc = ax.scatter(data['x'], data['y'], c="red", zorder=1)
+    ax[0].imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    ax[0].set_title('IMAGE')
+
+    ax[1].imshow(initial_mask, cmap='gray')
+    ax[1].set_title('INITIAL MASK')
+
+    ax[2].imshow(mark_boundaries(img_as_float(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)),
+                                 segments_slic_mask, color=(0, 0, 255)))
+    sc = ax[2].scatter(data['x'], data['y'], c="red", zorder=1)
+    ax[2].set_title("SLIC")
 
     cursor = mplcursors.cursor(sc, hover=True)
 
@@ -86,11 +71,12 @@ def analysis_superpixels(path_image, path_mask):
         m = data.loc[sel.index]["mean"]
         s = data.loc[sel.index]["std"]
         sel.annotation.set(text=f"mean: {m}\nstd: {s}")
-        # print(f"index: {sel.index}, coord: {sel.target}")
 
+    ax[3].imshow(cv2.cvtColor(final_image, cv2.COLOR_BGR2RGB))
+    ax[3].set_title('IMAGE WITHOUT BACKGROUND')
+
+    for a in ax.ravel():
+        a.set_axis_off()
+
+    plt.tight_layout()
     plt.show()
-
-
-if __name__ == "__main__":
-    analysis_superpixels(f"C:\\Users\\usuario\\Projects\\cow-bcs-classification\\images\\region_growing_test\\vaca1.jpeg",
-                         f"C:\\Users\\usuario\\Projects\\cow-bcs-classification\\images\\region_growing_test\\mask1.png")
