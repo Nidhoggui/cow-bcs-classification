@@ -54,10 +54,10 @@ def analysis_superpixels(path_image, path_mask):
         image_chunk_mean_blue = np.mean(image_chunk[mask == 1][:, 0])
         image_chunk_std_blue = np.std(image_chunk[mask == 1][:, 0])
 
-        chunk_mean_vector = (int(image_chunk_mean_blue), int(
-            image_chunk_mean_green), int(image_chunk_mean_red))
-        chunk_std_vector = (int(image_chunk_std_blue), int(
-            image_chunk_std_green), int(image_chunk_std_red))
+        chunk_mean_vector = (int(image_chunk_mean_red), int(image_chunk_mean_green),
+                             int(image_chunk_mean_blue))
+        chunk_std_vector = (int(image_chunk_std_red), int(image_chunk_std_green),
+                            int(image_chunk_std_blue))
 
         means.append(chunk_mean_vector)
         std.append(chunk_std_vector)
