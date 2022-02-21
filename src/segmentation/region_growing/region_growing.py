@@ -106,7 +106,7 @@ def region_growing_superpixels_rgb(rgb_image, graph_matrix, segments_slic_mask, 
         seeds.pop(0)
 
 
-def region_growing_superpixels_ed_fixed(rgb_image, graph_matrix, segments_slic_mask, seeds, image_mask, c=1):
+def region_growing_superpixels_ed_dinamic(rgb_image, graph_matrix, segments_slic_mask, seeds, image_mask, c=1):
     superpixels_in_mask = []
 
     copy_image_mask = image_mask.copy()
@@ -151,7 +151,7 @@ def region_growing_superpixels_ed_fixed(rgb_image, graph_matrix, segments_slic_m
 
     return copy_image_mask
 
-def region_growing_superpixels_ed_dinamic(rgb_image, graph_matrix, segments_slic_mask, seeds, image_mask, c=1):
+def region_growing_superpixels_ed_fixed(rgb_image, graph_matrix, segments_slic_mask, seeds, image_mask, c=1):
     superpixels_in_mask = []
 
     copy_image_mask = image_mask.copy()
