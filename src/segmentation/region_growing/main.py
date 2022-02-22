@@ -48,9 +48,6 @@ if __name__ == "__main__":
     graph_matrix = create_connected_superpixels_graph(segments_slic_mask)
 
     # region_growing_superpixels_gray(grayscale_image, graph_matrix, segments_slic_mask, seeds, mask_image)
-    # region_growing_superpixels_rgb(image, graph_matrix, segments_slic_mask, seeds, mask_image, c=1.3)
-    # mask = region_growing_superpixels_ed_dinamic(
-    #     image, graph_matrix, segments_slic_mask, seeds, mask_image, c=1.3)
     mask = region_growing_superpixels(
         image, graph_matrix, segments_slic_mask, seeds, mask_image, euclidean_rgb, c=1.3)
 
