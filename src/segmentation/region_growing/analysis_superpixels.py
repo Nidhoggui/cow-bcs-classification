@@ -1,4 +1,3 @@
-from calendar import c
 import matplotlib.pyplot as plt
 import mplcursors
 import numpy as np
@@ -45,7 +44,7 @@ def analysis_superpixels(image, initial_mask, final_image, segments_slic_mask, f
         std.append(chunk_std_vector)
 
         belong.append(any(final_mask[mask == 1] == 1))
-        
+
     data = pd.DataFrame(centroids, columns=['x', 'y'])
 
     data['mean'] = means
@@ -65,7 +64,7 @@ def analysis_superpixels(image, initial_mask, final_image, segments_slic_mask, f
 
     ax[2].imshow(mark_boundaries(img_as_float(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)),
                                  segments_slic_mask, color=(0, 0, 255)))
-    sc = ax[2].scatter(data['x'], data['y'], c = data['belong'], zorder=1, s = 5)
+    sc = ax[2].scatter(data['x'], data['y'], c=data['belong'], zorder=1, s=5)
     ax[2].set_title("SLIC")
 
     cursor = mplcursors.cursor(sc, hover=True)

@@ -1,12 +1,14 @@
 from cv2 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 from skimage.segmentation import slic
 from skimage.util import img_as_float
 
 from region_growing import *
 from analysis_superpixels import analysis_superpixels
+from merge_criterion import *
+
+import os
 
 
 def configure_mask_image(mask_img, mask_img_reverse):
@@ -30,7 +32,7 @@ def configure_mask_image(mask_img, mask_img_reverse):
 
 
 if __name__ == "__main__":
-    images_path = r"C:\Users\pedro\workspace\cow-bcs-classification\images\region_growing_test\\"
+    images_path = "C:\\Users\\usuario\\Projects\\cow-bcs-classification\\images\\region_growing_test\\"
     image = cv2.imread(images_path + "vaca1.jpeg")
     grayscale_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -45,13 +47,16 @@ if __name__ == "__main__":
     seeds = [get_initial_seed(segments_slic_mask, mask_image, image)]
     graph_matrix = create_connected_superpixels_graph(segments_slic_mask)
 
-    # region_growing_superpixels(grayscale_image, graph_matrix, segments_slic_mask, seeds, mask_image)
+    # region_growing_superpixels_gray(grayscale_image, graph_matrix, segments_slic_mask, seeds, mask_image)
     # region_growing_superpixels_rgb(image, graph_matrix, segments_slic_mask, seeds, mask_image, c=1.3)
-    mask = region_growing_superpixels_ed_dinamic(
-        image, graph_matrix, segments_slic_mask, seeds, mask_image, c=1.3)
+    # mask = region_growing_superpixels_ed_dinamic(
+    #     image, graph_matrix, segments_slic_mask, seeds, mask_image, c=1.3)
+    mask = region_growing_superpixels(
+        image, graph_matrix, segments_slic_mask, seeds, mask_image, euclidean_rgb, c=1.3)
 
     mask = np.where((mask == 255), 1, 0).astype("uint8")
 
     final_image = image * mask[:, :, np.newaxis]
 
-    analysis_superpixels(image, mask_image, final_image, segments_slic_mask, mask)
+    analysis_superpixels(image, mask_image, final_image,
+                         segments_slic_mask, mask)
