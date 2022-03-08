@@ -41,7 +41,7 @@ if __name__ == "__main__":
     borders_mask = generate_new_mask(image, borders, segments_slic)
 
     growed_mask = region_growing_superpixels(
-        image, graph_matrix, segments_slic, seeds, borders.tolist(), c=1.3)
+        image, graph_matrix, segments_slic, seeds, borders.tolist(), algebric_rgb, c=1.3)
     growed_mask[new_seeds == 255] = 255
     growed_mask = np.where((growed_mask == 255), 1, 0).astype("uint8")
 

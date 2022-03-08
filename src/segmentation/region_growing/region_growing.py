@@ -59,7 +59,7 @@ def border_superpixels(graph_matrix, segments_slic_mask, seeds):
           borders.append(chunk)
     return np.unique(borders)
 
-def region_growing_superpixels(rgb_image, graph_matrix, segments_slic_mask, total_seeds, seeds, c):
+def region_growing_superpixels(rgb_image, graph_matrix, segments_slic_mask, total_seeds, seeds, merge_criterion, c):
     superpixels_in_mask = total_seeds
     final_mask = np.zeros(rgb_image.shape[:2]).astype('uint8')
     while len(seeds) > 0:
@@ -92,7 +92,7 @@ def region_growing_superpixels(rgb_image, graph_matrix, segments_slic_mask, tota
                 mean_vector = (mean_blue, mean_green, mean_red)
                 std_vector = (std_blue, std_green, std_red)
 
-                if distance.euclidean(chunk_mean_vector, mean_vector) <= distance.euclidean(chunk_std_vector, std_vector) * c:
+                if merge_criterion(mean_vector, std_vector, chunk_mean_vector, chunk_std_vector, c):
                     final_mask[mask == 1] = 255
                     if segment_value not in seeds:
                         seeds.append(segment_value)
