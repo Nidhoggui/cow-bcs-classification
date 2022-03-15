@@ -17,6 +17,7 @@ def vector_rgb(mean_vector, std_vector, chunk_mean_vector, chunk_std_vector, c):
 
 
 def euclidean_rgb(mean_vector, std_vector, chunk_mean_vector, chunk_std_vector, c):
+    #vector format= (255,255,255)
     if distance.euclidean(chunk_mean_vector, mean_vector) <= distance.euclidean(chunk_std_vector, std_vector) * c:
         return True
     else:
