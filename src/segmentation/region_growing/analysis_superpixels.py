@@ -9,11 +9,13 @@ from skimage.util import img_as_float
 from skimage.measure import regionprops
 
 
-def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_mask, new_seeds, borders_mask):
+def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_mask, new_seeds, borders_mask,plot=3):
     centroids = []
     means = []
     std = []
     belong = []
+
+    copy_image = image.copy()
 
     for x in range(segments_slic.shape[0]):
         for y in range(segments_slic.shape[1]):
@@ -42,7 +44,7 @@ def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_
                              int(image_chunk_mean_blue))
         chunk_std_vector = (int(image_chunk_std_red), int(image_chunk_std_green),
                             int(image_chunk_std_blue))
-
+        copy_image[mask == 1] = chunk_mean_vector
         means.append(chunk_mean_vector)
         std.append(chunk_std_vector)
 
@@ -89,8 +91,12 @@ def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_
     ax[1,1].imshow(cv2.cvtColor(final_image, cv2.COLOR_BGR2RGB))
     ax[1,1].set_title('IMAGE WITHOUT BACKGROUND')
 
+    ax[1,2].imshow(copy_image)
+    ax[1,2].set_title('TEST')
+
     for a in ax.ravel():
         a.set_axis_off()
 
-    plt.tight_layout(h_pad=20)
-    plt.show()
+    plt.tight_layout(h_pad=10)
+    plt.savefig(r'C:\\Users\\pedro\\Downloads\\Cows_output\\output_vector_c=1_cow'+str(plot)+'.png')
+    #plt.show()
