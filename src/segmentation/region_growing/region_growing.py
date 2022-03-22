@@ -62,6 +62,8 @@ def border_superpixels(graph_matrix, segments_slic_mask, seeds):
 def region_growing_superpixels(rgb_image, graph_matrix, segments_slic_mask, total_seeds, seeds, merge_criterion, c):
     superpixels_in_mask = total_seeds
     final_mask = np.zeros(rgb_image.shape[:2]).astype('uint8')
+    count = np.zeros(len(np.unique(segments_slic_mask)))
+    
     while len(seeds) > 0:
         current_chunk_mask = np.zeros(rgb_image.shape[:2]).astype('uint8')
         current_chunk_mask[segments_slic_mask == seeds[0]] = 1
@@ -91,13 +93,17 @@ def region_growing_superpixels(rgb_image, graph_matrix, segments_slic_mask, tota
 
                 mean_vector = (mean_blue, mean_green, mean_red)
                 std_vector = (std_blue, std_green, std_red)
-
+                print(seeds[0], " check ",segment_value)
                 if merge_criterion(mean_vector, std_vector, chunk_mean_vector, chunk_std_vector, c):
-                    final_mask[mask == 1] = 255
-                    if segment_value not in seeds:
-                        seeds.append(segment_value)
-                    superpixels_in_mask.append(segment_value)                    
+                    print(seeds[0], " add ",segment_value," - ", mean_vector + std_vector, chunk_mean_vector )
+                    count[segment_value]+=1
+                    if count[segment_value] > 1:
+                        print(seeds[0], " confirm ",segment_value," - ", mean_vector + std_vector, chunk_mean_vector )
+                        if segment_value not in seeds:
+                            final_mask[mask == 1] = 255
+                            seeds.append(segment_value)
+                        superpixels_in_mask.append(segment_value)                    
 
         seeds.pop(0)
-
+    print(count)
     return final_mask
