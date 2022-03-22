@@ -9,7 +9,7 @@ from skimage.util import img_as_float
 from skimage.measure import regionprops
 
 
-def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_mask, new_seeds, borders_mask,plot=3):
+def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_mask, new_seeds, borders_mask, growed_part,plot = 1):
     centroids = []
     means = []
     std = []
@@ -94,9 +94,12 @@ def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_
     ax[1,2].imshow(copy_image)
     ax[1,2].set_title('TEST')
 
+    ax[1,3].imshow(cv2.cvtColor(growed_part, cv2.COLOR_BGR2RGB))
+    ax[1,3].set_title('ADDED')
+
     for a in ax.ravel():
         a.set_axis_off()
 
     plt.tight_layout(h_pad=10)
-    plt.savefig(r'C:\\Users\\pedro\\Downloads\\Cows_output\\output_vector_c=1_cow'+str(plot)+'.png')
-    #plt.show()
+    #plt.savefig(r'C:\\Users\\pedro\\Downloads\\Cows_output\\count\\output_algebric_count2_c=3_cow'+str(plot)+'.png')
+    plt.show()
