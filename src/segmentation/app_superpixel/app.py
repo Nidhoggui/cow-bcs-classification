@@ -13,6 +13,8 @@ class SuperpixelApp(Frame):
     def __init__(self, master=None):
         Frame.__init__(self, master)
 
+        # attributes
+        self.image_path = ""
         self.image_openCV = None
         self.image_TK = None
         self.result_image_openCV = None
@@ -21,56 +23,74 @@ class SuperpixelApp(Frame):
         self.segments_slic = None
 
         self.canvas = None
-        self.canvas_result = None
+        self.padding_between_images = 10
+        self.save_btn = None
+        self.new_image_btn = None
 
-        self.init_UI()
+        # methods
+        self._init_UI()
 
-    def init_UI(self):
+
+    def _init_UI(self):
         self.master.title("Superpixels")
         self.pack()
-
-        self.master.bind("<ButtonPress-1>", self.click_event)
-
-        self.image_TK, self.result_image_TK = self.load_image()
-
-        self.create_result_window()
-
-        self.canvas = Canvas(self.master, width=self.image_TK.width(), height=self.image_TK.height())
-        self.canvas.create_image(0, 0, anchor=NW, image=self.image_TK)
-        self.canvas.image = self.image_TK
-        self.canvas.pack()
-
-    def create_result_window(self):
-        window = Toplevel(self.master) # Toplevel is a window child of Frame
-        window.wm_title("Result")
-        window.minsize(width=self.result_image_TK.width(), height=self.result_image_TK.height())
-        
-        self.canvas_result = Canvas(window, width=self.result_image_TK.width(), height=self.result_image_TK.height())
-        self.canvas_result.create_image(0, 0, anchor=NW, image=self.result_image_TK)
-        self.canvas_result.pack()
+        self._load_UI()
 
 
-    def click_event(self, event):
+    def _load_UI(self):
+        self.image_TK, self.result_image_TK = self._load_image()
+
+        if self.image_TK == None or self.result_image_TK == None:
+            self.master.destroy()
+        else:
+            self.canvas = Canvas(self.master, width=(self.image_TK.width() * 2) + self.padding_between_images, height=self.image_TK.height())
+            self.canvas.create_image(0, 0, anchor=NW, image=self.image_TK)
+            self.canvas.create_image(self.result_image_TK.width() + self.padding_between_images, 0, anchor=NW, image=self.result_image_TK)
+            self.canvas.bind("<ButtonPress-1>", self._click_event)
+            self.canvas.pack()
+
+            self.save_btn = Button(self.master, text="Save result", command=self._save_result)
+            self.save_btn.pack()
+            self.new_image_btn = Button(self.master, text="Choose new image", command=self._load_new_image)
+            self.new_image_btn.pack()
+
+
+    def _load_new_image(self):
+        self.canvas.destroy()
+        self.save_btn.destroy()
+        self.new_image_btn.destroy()
+        self._load_UI()
+
+
+    def _click_event(self, event):
         x = int(self.canvas.canvasx(event.x))
         y = int(self.canvas.canvasy(event.y))
 
-        clicked_label = self.segments_slic[y][x]
-        self.mask[self.segments_slic == clicked_label] = 1
+        if y < self.segments_slic.shape[0] and x < self.segments_slic.shape[1]:
+            clicked_label = self.segments_slic[y][x]
+            self.mask[self.segments_slic == clicked_label] = 1
+            self.result_image_openCV = self.image_openCV * self.mask[:, :, np.newaxis]
+        elif y < self.segments_slic.shape[0]:
+            x = x - self.image_TK.width() - self.padding_between_images
+            y = y - self.image_TK.height()
 
-        self.result_image_openCV = self.image_openCV * self.mask[:, :, np.newaxis]
+            clicked_label = self.segments_slic[y][x]
+            self.result_image_openCV[self.segments_slic == clicked_label] = 0
+            self.mask[self.segments_slic == clicked_label] = 0
 
         result_image_PIL = Image.fromarray(self.result_image_openCV)
         self.result_image_TK = ImageTk.PhotoImage(result_image_PIL)
-        self.canvas_result.create_image(0, 0, anchor=NW, image=self.result_image_TK)
-        self.canvas_result.pack()
+        self.canvas.create_image(self.result_image_TK.width() + self.padding_between_images, 0, anchor=NW, image=self.result_image_TK)
 
 
-    def load_image(self):
-        image_path = filedialog.askopenfilename()
+    def _load_image(self):
+        self.image_path = filedialog.askopenfilename()
 
-        if (len(image_path) > 0):
-            self.image_openCV = cv2.imread(image_path)
+        if (len(self.image_path) > 0):
+            self.image_openCV = cv2.imread(self.image_path)
             self.image_openCV = cv2.cvtColor(self.image_openCV, cv2.COLOR_BGR2RGB)
+
+            self.image_openCV = self._resize_image(self.image_openCV)
 
             # calculate slic and mark the superpixels
             self.segments_slic = slic(img_as_float(self.image_openCV), n_segments=150, compactness=20, sigma=1, start_label=0)
@@ -91,7 +111,32 @@ class SuperpixelApp(Frame):
             return ImageTk.PhotoImage(image_PIL), ImageTk.PhotoImage(result_image_PIL)
 
         return None, None
-    
+
+    # improve the resize with better methods
+    def _resize_image(self, image):
+        if image.shape[0] >= 1600 or image.shape[1] >= 1600:
+            width = image.shape[1] // 3
+            height = image.shape[0] // 3
+        elif image.shape[0] >= 800 or image.shape[1] >= 800:
+            width = image.shape[1] // 2
+            height = image.shape[0] // 2
+        else:
+            width = image.shape[1]
+            height = image.shape[0]
+
+        return cv2.resize(image, (width, height), interpolation=cv2.INTER_LINEAR)
+
+
+    def _save_result(self):
+        save_directory_path = filedialog.askdirectory()
+        if len(save_directory_path) > 0:
+            file_name = self.image_path.split('/')
+            file_name = file_name[len(file_name) - 1]
+            
+            self.result_image_openCV = cv2.cvtColor(self.result_image_openCV, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(f"{save_directory_path}/result_{file_name}", self.result_image_openCV)
+            self.result_image_openCV = cv2.cvtColor(self.result_image_openCV, cv2.COLOR_BGR2RGB)
+
 
 if __name__ == "__main__":
     root = Tk()
