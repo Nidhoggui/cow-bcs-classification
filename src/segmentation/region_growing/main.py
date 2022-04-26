@@ -1,5 +1,4 @@
 from cv2 import cv2
-import numpy as np
 
 from skimage.segmentation import slic
 from skimage.util import img_as_float
@@ -24,15 +23,16 @@ def configure_mask_image(mask_img):
 
     return mask_img
 
+
 if __name__ == "__main__":
-    images_path = r"C:\\Users\\pedro\\workspace\\cow-bcs-classification\\images\\region_growing_test\\ECCs\\ECC 3,0\\"
-    image = cv2.imread(images_path + "vaca_10.jpeg")
+    images_path = os.path.abspath('../../../images/region_growing_test/ECCs/ECC 3,0')
+    image = cv2.imread(images_path + "/vaca_10.jpeg")
     grayscale_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    mask_image = cv2.imread(images_path + "mask_10.png", 0)
+    mask_image = cv2.imread(images_path + "/mask_10.png", 0)
     mask_image = configure_mask_image(mask_image)
 
-    segments_slic = slic(img_as_float(image), n_segments=150, compactness=20, sigma=1, start_label = 0)
+    segments_slic = slic(img_as_float(image), n_segments=150, compactness=20, sigma=1, start_label=0)
     seeds = get_initial_seed(segments_slic, mask_image, image)
     graph_matrix = create_connected_superpixels_graph(segments_slic)
     print(seeds)

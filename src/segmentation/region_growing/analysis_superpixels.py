@@ -9,7 +9,8 @@ from skimage.util import img_as_float
 from skimage.measure import regionprops
 
 
-def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_mask, new_seeds, borders_mask, growed_part,plot = 1):
+def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_mask, new_seeds, borders_mask,
+                         growed_part, plot=1):
     centroids = []
     means = []
     std = []
@@ -19,7 +20,7 @@ def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_
 
     for x in range(segments_slic.shape[0]):
         for y in range(segments_slic.shape[1]):
-            segments_slic[x,y] += 1
+            segments_slic[x, y] += 1
 
     regions = regionprops(segments_slic)
 
@@ -61,23 +62,23 @@ def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_
     fig.set_figwidth(8)
     fig.set_figheight(12)
 
-    ax[0,0].imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-    ax[0,0].set_title('IMAGE')
+    ax[0, 0].imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    ax[0, 0].set_title('IMAGE')
 
-    ax[0,1].imshow(initial_mask, cmap='gray')
-    ax[0,1].set_title('INITIAL MASK')
+    ax[0, 1].imshow(initial_mask, cmap='gray')
+    ax[0, 1].set_title('INITIAL MASK')
 
-    ax[0,2].imshow(new_seeds, cmap='gray')
-    ax[0,2].set_title('INITAL SEEDS BASED ON MASK')
+    ax[0, 2].imshow(new_seeds, cmap='gray')
+    ax[0, 2].set_title('INITAL SEEDS BASED ON MASK')
 
-    ax[0,3].imshow(borders_mask, cmap='gray')
-    ax[0,3].set_title("BORDER SUPERPIXELS")
+    ax[0, 3].imshow(borders_mask, cmap='gray')
+    ax[0, 3].set_title("BORDER SUPERPIXELS")
 
-    ax[1,0].imshow(mark_boundaries(img_as_float(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)),
-                                   segments_slic, color=(0, 0, 255)))
-    sc = ax[1,0].scatter(data['x'], data['y'], c=data['belong'], zorder=1, s=5)
-    ax[1,0].set_title("SLIC")
-    
+    ax[1, 0].imshow(mark_boundaries(img_as_float(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)),
+                                    segments_slic, color=(0, 0, 255)))
+    sc = ax[1, 0].scatter(data['x'], data['y'], c=data['belong'], zorder=1, s=5)
+    ax[1, 0].set_title("SLIC")
+
     cursor = mplcursors.cursor(sc, hover=True)
 
     @cursor.connect("add")
@@ -88,18 +89,17 @@ def analysis_superpixels(image, initial_mask, final_image, segments_slic, final_
         i = data.loc[sel.index]["index"]
         sel.annotation.set(text=f"mean: {m}\nstd: {s}\nbelong: {c}\nindex: {i}")
 
-    ax[1,1].imshow(cv2.cvtColor(final_image, cv2.COLOR_BGR2RGB))
-    ax[1,1].set_title('IMAGE WITHOUT BACKGROUND')
+    ax[1, 1].imshow(cv2.cvtColor(final_image, cv2.COLOR_BGR2RGB))
+    ax[1, 1].set_title('IMAGE WITHOUT BACKGROUND')
 
-    ax[1,2].imshow(copy_image)
-    ax[1,2].set_title('TEST')
+    ax[1, 2].imshow(copy_image)
+    ax[1, 2].set_title('TEST')
 
-    ax[1,3].imshow(cv2.cvtColor(growed_part, cv2.COLOR_BGR2RGB))
-    ax[1,3].set_title('ADDED')
+    ax[1, 3].imshow(cv2.cvtColor(growed_part, cv2.COLOR_BGR2RGB))
+    ax[1, 3].set_title('ADDED')
 
     for a in ax.ravel():
         a.set_axis_off()
 
     plt.tight_layout(h_pad=10)
-    #plt.savefig(r'C:\\Users\\pedro\\Downloads\\Cows_output\\count\\output_algebric_count2_c=3_cow'+str(plot)+'.png')
     plt.show()

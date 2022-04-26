@@ -91,7 +91,7 @@ class SuperpixelApp(Frame):
             self.image_openCV = self._resize_image(self.image_openCV)
 
             # calculate slic and mark the superpixels
-            self.segments_slic = slic(img_as_float(self.image_openCV), n_segments=150, compactness=20, sigma=1,
+            self.segments_slic = slic(img_as_float(self.image_openCV), n_segments=500, compactness=20, sigma=1,
                                       start_label=0)
             image_boundaries = mark_boundaries(img_as_float(self.image_openCV), self.segments_slic,
                                                color=(255, 254, 253))
