@@ -25,7 +25,7 @@ def configure_mask_image(mask_img):
 
 
 if __name__ == "__main__":
-    images_path = os.path.abspath('../../../images/region_growing_test/ECCs/ECC 3,0')
+    images_path = os.path.abspath('../../../images/test/ECCs/ECC 3,0')
     image = cv2.imread(images_path + "/vaca_10.jpeg")
     grayscale_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
