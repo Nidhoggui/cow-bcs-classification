@@ -1,20 +1,36 @@
 from cv2 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 import os
 
 
-def show_images(images):
-    horizontal_images = np.concatenate(images, axis=1)
+def configure_image_display(images):
+    fig, ax = plt.subplots(1, 5, figsize=(14, 4))
+    fig.set_figwidth(14)
+    fig.set_figheight(4)
 
-    cv2.imshow('HORIZONTAL', horizontal_images)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    ax[0].imshow(cv2.cvtColor(images[0], cv2.COLOR_BGR2RGB))
+    ax[0].set_title('IMAGE')
+
+    ax[1].imshow(images[1], cmap='gray')
+    ax[1].set_title('KERNEL (3, 3)')
+
+    ax[2].imshow(images[2], cmap='gray')
+    ax[2].set_title('KERNEL (5, 5)')
+
+    ax[3].imshow(images[3], cmap='gray')
+    ax[3].set_title("KERNEL (7, 7)")
+
+    ax[4].imshow(images[4], cmap='gray')
+    ax[4].set_title("KERNEL (9, 9)")
 
 
-def erode(image, iterations=2):
-    kernel = np.ones((5, 5), np.uint8)
-    return cv2.erode(image, kernel, iterations=iterations)
+def erode(image, kernel_size=(5, 5), iterations=2):
+    kernel = np.ones(kernel_size, np.uint8)
+    erode_image = cv2.erode(image, kernel, iterations=iterations)
+
+    return erode_image
 
 
 def get_top_back_shape(image):
@@ -39,18 +55,33 @@ def hu_moments_with_log_transformation(image):
     return hu_moments
 
 
+def test_kernels_size(image, kernel_size):
+    erode_image = erode(image, kernel_size=kernel_size)
+    subtract_image = cv2.subtract(image, erode_image)
+    top_back_shape = get_top_back_shape(subtract_image)
+
+    return top_back_shape
+
+
 def main(images):
     for image in images:
-        blur_image = cv2.blur(image, (3, 3))
-        erode_image = erode(blur_image, 4)
-        erode_image[erode_image != 0] = 255
-        subtract_image = cv2.subtract(blur_image, erode_image)
+        _, thresh = cv2.threshold(image, 20, 255, cv2.THRESH_BINARY)
+        blur_image = cv2.blur(thresh, (3, 3))
+        blur_image[blur_image != 255] = 0
 
-        top_back_shape = get_top_back_shape(subtract_image)
+        top_back_shape_3_3 = test_kernels_size(blur_image, kernel_size=(3, 3))
+        top_back_shape_5_5 = test_kernels_size(blur_image, kernel_size=(5, 5))
+        top_back_shape_7_7 = test_kernels_size(blur_image, kernel_size=(7, 7))
+        top_back_shape_9_9 = test_kernels_size(blur_image, kernel_size=(9, 9))
 
-        print(hu_moments_with_log_transformation(top_back_shape).flatten())
+        print(f"Hu Moments with erode kernel size (3, 3): {hu_moments_with_log_transformation(top_back_shape_3_3).flatten()}")
+        print(f"Hu Moments with erode kernel size (5, 5): {hu_moments_with_log_transformation(top_back_shape_5_5).flatten()}")
+        print(f"Hu Moments with erode kernel size (7, 7): {hu_moments_with_log_transformation(top_back_shape_7_7).flatten()}")
+        print(f"Hu Moments with erode kernel size (9, 9): {hu_moments_with_log_transformation(top_back_shape_9_9).flatten()}")
+        print()
 
-        show_images((image, blur_image, subtract_image, top_back_shape))
+        configure_image_display([image, top_back_shape_3_3, top_back_shape_5_5, top_back_shape_7_7, top_back_shape_9_9])
+    plt.show()
 
 
 if __name__ == "__main__":
