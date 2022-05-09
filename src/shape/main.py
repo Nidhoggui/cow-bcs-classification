@@ -108,7 +108,7 @@ def show_poly_fit(images):
         x, y = translate_shape_coords_to_origin(top_back_shape)
 
         poly = np.polyfit(x, y, deg=6)
-
+        print(poly)
         fig, ax = plt.subplots(1, 3, figsize=(14, 6))
         fig.set_figwidth(14)
         fig.set_figheight(6)
@@ -130,12 +130,25 @@ def show_poly_fit(images):
 
 
 if __name__ == "__main__":
-    images_path = os.path.abspath('../../images/segmented_images/ECCs/ECC 3,0')
-    cow_tail_image_1 = cv2.imread(images_path + "/result_vaca traseira 1(perfeito_pasto).jpeg", cv2.IMREAD_GRAYSCALE)
-    cow_tail_image_2 = cv2.imread(images_path + "/result_vaca traseira 5(quase_perfeito_pasto).jpeg", cv2.IMREAD_GRAYSCALE)
-    cow_tail_image_2[cow_tail_image_2 > 150] = 0  # remove the part of the sky that was left from the background
+    images_path = os.path.abspath('../../Projetos/cow-bcs-classification/images/perfect_segmentation')
+    cow_tail_image_1 = cv2.imread(images_path + "/result_#ECC-2.75(1).png", cv2.IMREAD_GRAYSCALE)
+    cow_tail_image_2 = cv2.imread(images_path + "/result_#ECC-3.5.png", cv2.IMREAD_GRAYSCALE)
+    cow_tail_image_3 = cv2.imread(images_path + "/result_#ECC-3.25(1).png", cv2.IMREAD_GRAYSCALE)
+    cow_tail_image_4 = cv2.imread(images_path + "/result_#ECC-3.75(1).png", cv2.IMREAD_GRAYSCALE)
+    cow_tail_image_5 = cv2.imread(images_path + "/result_#ECC-3(1).png", cv2.IMREAD_GRAYSCALE)
+    #cow_tail_image_6 = cv2.imread(images_path + "/result#ECC-4.5.png", cv2.IMREAD_GRAYSCALE)
+    #cow_tail_image_7 = cv2.imread(images_path + "/result#ECC-4.png", cv2.IMREAD_GRAYSCALE)
+
+    #cow_tail_image_2[cow_tail_image_2 > 150] = 0  # remove the part of the sky that was left from the background
+
+    #Vacas
+    #3.25 - C:\Users\pedro\workspace\Projetos\cow-bcs-classification\images\segmented_images\ECCs\ECC 3,25\result_vaca traseira 2(quase_perfeito_curral).jpeg
+    #3.5 - C:\Users\pedro\workspace\Projetos\cow-bcs-classification\images\segmented_images\ECCs\ECC 3,50\result_vaca traseira 1(perfeito_pasto).jpeg
+    #3.75 - C:\Users\pedro\workspace\Projetos\cow-bcs-classification\images\segmented_images\ECCs\ECC 3,75\result_vaca traseira 3(quase_perfeita_curral).jpeg
+    #4 - C:\Users\pedro\workspace\Projetos\cow-bcs-classification\images\segmented_images\ECCs\ECC 4,0\result_vaca traseira 7.jpeg
+    #
 
     # show different top back shapes according to the kernel size with respectively hu moments
-    show_different_back_shapes([cow_tail_image_1, cow_tail_image_2])
+    #show_different_back_shapes([cow_tail_image_1, cow_tail_image_2])
     # show the top back pixels centered on the cartesian plane origin and their polynomial fit
-    show_poly_fit([cow_tail_image_1, cow_tail_image_2])
+    show_poly_fit([cow_tail_image_1, cow_tail_image_2, cow_tail_image_3, cow_tail_image_4, cow_tail_image_5])
