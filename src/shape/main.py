@@ -101,8 +101,8 @@ def translate_shape_coords_to_origin(image):
     return trans_x, trans_y
 
 
-def show_poly_fit(images):
-    for image in images:
+def show_poly_fit(images,eccs):
+    for image, ecc in zip(images,eccs):
         top_back_shape = run(image, kernel_size=(3, 3))
 
         x, y = translate_shape_coords_to_origin(top_back_shape)
@@ -114,7 +114,7 @@ def show_poly_fit(images):
         fig.set_figheight(6)
 
         ax[0].imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        ax[0].set_title('image')
+        ax[0].set_title(f'image - {ecc}')
 
         ax[1].imshow(cv2.cvtColor(top_back_shape, cv2.COLOR_BGR2RGB))
         ax[1].set_title('contour')
@@ -151,4 +151,4 @@ if __name__ == "__main__":
     # show different top back shapes according to the kernel size with respectively hu moments
     #show_different_back_shapes([cow_tail_image_1, cow_tail_image_2])
     # show the top back pixels centered on the cartesian plane origin and their polynomial fit
-    show_poly_fit([cow_tail_image_1, cow_tail_image_2, cow_tail_image_3, cow_tail_image_4, cow_tail_image_5])
+    show_poly_fit([cow_tail_image_1, cow_tail_image_2, cow_tail_image_3, cow_tail_image_4, cow_tail_image_5],[2.75,3.5,3.25,3.75,3])
