@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error
 import os
 
 
-class CowPolynomialFit:
+class BcsPolynomialFit:
 
     def __init__(self):
         # constant parameters
@@ -122,15 +122,15 @@ class CowPolynomialFit:
 if __name__ == "__main__":
     images_path = os.path.abspath('../../images/grabcut')
 
-    cow_polynomial_fit = CowPolynomialFit()
-    cow_polynomial_fit.set_characteristic_bsc_images({
+    bcs_polynomial_fit = BcsPolynomialFit()
+    bcs_polynomial_fit.set_characteristic_bsc_images({
         "2.75": images_path + "/ECC_2.75/grabcut_output(2).png",
         "3.0": images_path + "/ECC_3.0/grabcut_output(1).png",
         "4.0": images_path + "/ECC_4.0/grabcut_4.png"
     })
-    cow_polynomial_fit.create_characteristic_polynomials()
-    # cow_polynomial_fit.show_characteristic_polynomials()
+    bcs_polynomial_fit.create_characteristic_polynomials()
+    # bcs_polynomial_fit.show_characteristic_polynomials()
 
     cow_test = images_path + "/ECC_4.0/grabcut_3.png"
-    print(f"The BCS of the cow is probably: {cow_polynomial_fit.predict(cow_test)}")
+    print(f"The BCS of the cow is probably: {bcs_polynomial_fit.predict(cow_test)}")
 
