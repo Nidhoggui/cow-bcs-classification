@@ -1,154 +1,136 @@
 from cv2 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-
+from sklearn.metrics import mean_squared_error
 import os
 
 
-def configure_image_display(images):
-    fig, ax = plt.subplots(1, 5, figsize=(14, 4))
-    fig.set_figwidth(14)
-    fig.set_figheight(4)
+class CowPolynomialFit:
 
-    ax[0].imshow(cv2.cvtColor(images[0], cv2.COLOR_BGR2RGB))
-    ax[0].set_title('IMAGE')
+    def __init__(self):
+        # constant parameters
+        self.__kernel_size = (3, 3)
+        self.__threshold = 20
+        self.__polynomial_degree = 30
 
-    ax[1].imshow(images[1], cmap='gray')
-    ax[1].set_title('KERNEL (3, 3)')
+        self.__characteristic_bcs_info = {}
+        self.__characteristic_bcs_images = {}
 
-    ax[2].imshow(images[2], cmap='gray')
-    ax[2].set_title('KERNEL (5, 5)')
+    def set_characteristic_bsc_images(self, bcs_images: dict):
+        self.__characteristic_bcs_images = bcs_images
 
-    ax[3].imshow(images[3], cmap='gray')
-    ax[3].set_title("KERNEL (7, 7)")
+    def create_characteristic_polynomials(self):
+        for bcs, image_path in self.__characteristic_bcs_images.items():
+            cow_image, thresh, top_back_shape, x, y, polynomial_coefficients, polynomial = self.__create_polynomial(image_path)
+            self.__characteristic_bcs_info[bcs] = {
+                "image": cow_image,
+                "thresh": thresh,
+                "top_back_shape": top_back_shape,
+                "x": x,
+                "y": y,
+                "polynomial_coefficients": polynomial_coefficients,
+                "polynomial": np.poly1d(polynomial_coefficients)
+            }
 
-    ax[4].imshow(images[4], cmap='gray')
-    ax[4].set_title("KERNEL (9, 9)")
+    # QUESTION: When I use the polynomial coefficients to measure the MSE the it works, but doesn't make sense to me,
+    # because we need to pass the y values to MSE function, so I think the correct is to create a range for the x values
+    # and pass it to the polynomials, but when I do this, the results are worse than before.
+    def predict(self, image_path):
+        mse_scores = {}
+        cow_image, thresh, top_back_shape, x, y, polynomial_coefficients, polynomial = self.__create_polynomial(image_path)
 
+        for bcs, info in self.__characteristic_bcs_info.items():
+            mse_scores[bcs] = mean_squared_error(info["polynomial"], polynomial)
 
-def erode(image, kernel_size=(5, 5), iterations=2):
-    kernel = np.ones(kernel_size, np.uint8)
-    erode_image = cv2.erode(image, kernel, iterations=iterations)
+        print(mse_scores)
 
-    return erode_image
+        return min(mse_scores, key=mse_scores.get)
 
+    def show_characteristic_polynomials(self):
+        for bcs, info in self.__characteristic_bcs_info.items():
+            fig, ax = plt.subplots(1, 4, figsize=(14, 6))
+            fig.set_figwidth(14)
+            fig.set_figheight(6)
 
-def get_top_back_shape(image):
-    image = image.copy()
-    mean = np.mean(np.where(image != 0)[0])  # mean of the y coordinates of the board
-    for y in range(image.shape[0]):
-        for x in range(image.shape[1]):
-            if y > mean:
-                image[y][x] = 0
+            ax[0].imshow(cv2.cvtColor(info["image"], cv2.COLOR_GRAY2RGB))
+            ax[0].set_title(f"Cow BCS = {bcs}")
 
-    return image
+            ax[1].imshow(cv2.cvtColor(info["thresh"], cv2.COLOR_GRAY2RGB))
+            ax[1].set_title("Thresh image")
 
+            ax[2].imshow(cv2.cvtColor(info["top_back_shape"], cv2.COLOR_GRAY2RGB))
+            ax[2].set_title("Contour")
 
-def hu_moments_with_log_transformation(image):
-    moments = cv2.moments(image)
-    hu_moments = cv2.HuMoments(moments)
+            x_range = (info["top_back_shape"].shape[1] - 1) // 2
+            y_range = (info["top_back_shape"].shape[0] - 1) // 2
+            plt.xlim([-x_range, x_range])
+            plt.ylim([-y_range, y_range])
+            ax[3].plot(info["x"], info["y"], "o", markersize=2, color="orange")
+            ax[3].plot(info["x"], np.polyval(info["polynomial_coefficients"], info["x"]), "o", markersize=3)
+            ax[3].set_title(f"Polynomial degree = {self.__polynomial_degree}")
+        plt.show()
 
-    # log transformation
-    for i in range(len(hu_moments)):
-        hu_moments[i] = -1 * np.sign(hu_moments[i]) * np.log10(np.abs(hu_moments[i]))
+    def __create_polynomial(self, image_path):
+        cow_image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        _, thresh = cv2.threshold(cow_image, self.__threshold, 255, cv2.THRESH_BINARY)
 
-    return hu_moments
+        blur_image = cv2.blur(thresh, self.__kernel_size)
+        blur_image[blur_image != 255] = 0
 
+        erode_image = self.__erode(blur_image, kernel_size=self.__kernel_size)
+        subtract_image = cv2.subtract(blur_image, erode_image)
+        top_back_shape = self.__get_top_back_shape(subtract_image)
 
-def run(image, kernel_size):
-    _, thresh = cv2.threshold(image, 20, 255, cv2.THRESH_BINARY)
+        x, y = self.__translate_shape_coords_to_origin(top_back_shape)
+        polynomial_coefficients = np.polyfit(x, y, deg=self.__polynomial_degree)
+        polynomial = np.poly1d(polynomial_coefficients)
 
-    blur_image = cv2.blur(thresh, (3, 3))
-    blur_image[blur_image != 255] = 0
+        return cow_image, thresh, top_back_shape, x, y, polynomial_coefficients, polynomial
 
-    erode_image = erode(blur_image, kernel_size=kernel_size)
-    subtract_image = cv2.subtract(blur_image, erode_image)
-    top_back_shape = get_top_back_shape(subtract_image)
+    def __erode(self, image, kernel_size=(5, 5), iterations=2):
+        kernel = np.ones(kernel_size, np.uint8)
+        erode_image = cv2.erode(image, kernel, iterations=iterations)
 
-    return top_back_shape
+        return erode_image
 
+    def __get_top_back_shape(self, image):
+        image = image.copy()
+        mean = np.mean(np.where(image != 0)[0])  # mean of the y coordinates of the board
+        for y in range(image.shape[0]):
+            for x in range(image.shape[1]):
+                if y > mean:
+                    image[y][x] = 0
 
-def show_different_back_shapes(images):
-    for image in images:
-        top_back_shape_3_3 = run(image, kernel_size=(3, 3))
-        top_back_shape_5_5 = run(image, kernel_size=(5, 5))
-        top_back_shape_7_7 = run(image, kernel_size=(7, 7))
-        top_back_shape_9_9 = run(image, kernel_size=(9, 9))
+        return image
 
-        print(f"Hu Moments with erode kernel size (3, 3): {hu_moments_with_log_transformation(top_back_shape_3_3).flatten()}")
-        print(f"Hu Moments with erode kernel size (5, 5): {hu_moments_with_log_transformation(top_back_shape_5_5).flatten()}")
-        print(f"Hu Moments with erode kernel size (7, 7): {hu_moments_with_log_transformation(top_back_shape_7_7).flatten()}")
-        print(f"Hu Moments with erode kernel size (9, 9): {hu_moments_with_log_transformation(top_back_shape_9_9).flatten()}")
-        print()
+    def __find_the_center_pixel(self, image):
+        mean_y = np.mean(np.where(image != 0)[0])
+        mean_x = np.mean(np.where(image != 0)[1])
 
-        configure_image_display([image, top_back_shape_3_3, top_back_shape_5_5, top_back_shape_7_7, top_back_shape_9_9])
-    plt.show()
+        return int(mean_x), int(mean_y)
 
+    def __translate_shape_coords_to_origin(self, image):
+        flipped_image = image[::-1, :]
+        x_distance, y_distance = self.__find_the_center_pixel(flipped_image)
 
-def find_the_center_pixel(image):
-    mean_y = np.mean(np.where(image != 0)[0])
-    mean_x = np.mean(np.where(image != 0)[1])
-    return int(mean_x), int(mean_y)
+        trans_y = np.where(flipped_image != 0)[0] - y_distance
+        trans_x = np.where(flipped_image != 0)[1] - x_distance
 
-
-def translate_shape_coords_to_origin(image):
-    flipped_image = image[::-1, :]
-    x_distance, y_distance = find_the_center_pixel(flipped_image)
-
-    trans_y = np.where(flipped_image != 0)[0] - y_distance
-    trans_x = np.where(flipped_image != 0)[1] - x_distance
-
-    return trans_x, trans_y
-
-
-def show_poly_fit(images,eccs):
-    for image, ecc in zip(images,eccs):
-        top_back_shape = run(image, kernel_size=(3, 3))
-
-        x, y = translate_shape_coords_to_origin(top_back_shape)
-
-        poly = np.polyfit(x, y, deg=6)
-        print(poly)
-        fig, ax = plt.subplots(1, 3, figsize=(14, 6))
-        fig.set_figwidth(14)
-        fig.set_figheight(6)
-
-        ax[0].imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        ax[0].set_title(f'image - {ecc}')
-
-        ax[1].imshow(cv2.cvtColor(top_back_shape, cv2.COLOR_BGR2RGB))
-        ax[1].set_title('contour')
-
-        x_range = (top_back_shape.shape[1] - 1) // 2
-        y_range = (top_back_shape.shape[0] - 1) // 2
-        plt.xlim([-x_range, x_range])
-        plt.ylim([-y_range, y_range])
-        ax[2].plot(x, y, "o", markersize=2, color="orange")
-        ax[2].plot(x, np.polyval(poly, x), "o", markersize=3)
-        ax[2].set_title('curve')
-    plt.show()
+        return trans_x, trans_y
 
 
 if __name__ == "__main__":
-    images_path = os.path.abspath('../../Projetos/cow-bcs-classification/images/perfect_segmentation')
-    cow_tail_image_1 = cv2.imread(images_path + "/result_#ECC-2.75(1).png", cv2.IMREAD_GRAYSCALE)
-    cow_tail_image_2 = cv2.imread(images_path + "/result_#ECC-3.5.png", cv2.IMREAD_GRAYSCALE)
-    cow_tail_image_3 = cv2.imread(images_path + "/result_#ECC-3.25(1).png", cv2.IMREAD_GRAYSCALE)
-    cow_tail_image_4 = cv2.imread(images_path + "/result_#ECC-3.75(1).png", cv2.IMREAD_GRAYSCALE)
-    cow_tail_image_5 = cv2.imread(images_path + "/result_#ECC-3(1).png", cv2.IMREAD_GRAYSCALE)
-    #cow_tail_image_6 = cv2.imread(images_path + "/result#ECC-4.5.png", cv2.IMREAD_GRAYSCALE)
-    #cow_tail_image_7 = cv2.imread(images_path + "/result#ECC-4.png", cv2.IMREAD_GRAYSCALE)
+    images_path = os.path.abspath('../../images/grabcut')
 
-    #cow_tail_image_2[cow_tail_image_2 > 150] = 0  # remove the part of the sky that was left from the background
+    cow_polynomial_fit = CowPolynomialFit()
+    cow_polynomial_fit.set_characteristic_bsc_images({
+        "2.75": images_path + "/ECC_2.75/grabcut_output(2).png",
+        "3.0": images_path + "/ECC_3.0/grabcut_output(1).png",
+        "4.0": images_path + "/ECC_4.0/grabcut_4.png"
+    })
+    cow_polynomial_fit.create_characteristic_polynomials()
+    # cow_polynomial_fit.show_characteristic_polynomials()
 
-    #Vacas
-    #3.25 - C:\Users\pedro\workspace\Projetos\cow-bcs-classification\images\segmented_images\ECCs\ECC 3,25\result_vaca traseira 2(quase_perfeito_curral).jpeg
-    #3.5 - C:\Users\pedro\workspace\Projetos\cow-bcs-classification\images\segmented_images\ECCs\ECC 3,50\result_vaca traseira 1(perfeito_pasto).jpeg
-    #3.75 - C:\Users\pedro\workspace\Projetos\cow-bcs-classification\images\segmented_images\ECCs\ECC 3,75\result_vaca traseira 3(quase_perfeita_curral).jpeg
-    #4 - C:\Users\pedro\workspace\Projetos\cow-bcs-classification\images\segmented_images\ECCs\ECC 4,0\result_vaca traseira 7.jpeg
-    #
+    cow_test = images_path + "/ECC_4.0/grabcut_3.png"
+    print(f"The BCS of the cow is probably: {cow_polynomial_fit.predict(cow_test)}")
 
-    # show different top back shapes according to the kernel size with respectively hu moments
-    #show_different_back_shapes([cow_tail_image_1, cow_tail_image_2])
-    # show the top back pixels centered on the cartesian plane origin and their polynomial fit
-    show_poly_fit([cow_tail_image_1, cow_tail_image_2, cow_tail_image_3, cow_tail_image_4, cow_tail_image_5],[2.75,3.5,3.25,3.75,3])
